@@ -1,0 +1,2806 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<title>プレー分析 mini v17</title>
+<style>
+[hidden] { display: none !important; }
+
+:root {
+  --bg: #f5f5f0;
+  --surface: #ffffff;
+  --surface-2: #fafaf6;
+  --border: #e5e3dc;
+  --border-strong: #c5c3ba;
+  --text: #2c2c2a;
+  --text-mute: #6b6a65;
+  --text-light: #8a8985;
+  --primary: #1a3a6e;
+  --primary-light: #e6ecf5;
+  --accent: #fbbf24;
+  --danger: #c53030;
+  --danger-light: #fef0f0;
+  --c-lto: #7f1d1d;
+  --c-dto: #dc2626;
+  --c-pf: #be123c;
+  --c-fd: #2563eb;
+  --c-dfl_own: #0891b2;
+  --c-dfl_opp: #eab308;
+  --c-cs-blue: #2563eb;
+  --c-cs-red: #b91c1c;
+  --c-cs: #7c2d12;
+  --c-ucs: #7f1d1d;
+  --c-success: #1e40af;
+  --c-pos: #15803d;
+  --c-neg: #b91c1c;
+  --c-tof: #f97316;
+  --c-of: #ca8a04;
+  --c-tdf: #14b8a6;
+  --c-df: #2563eb;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --tap: 44px;
+  --footer-h: 40px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+body { min-height: 100vh; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; font-size: inherit; }
+input, select, textarea {
+  font-family: inherit;
+  font-size: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+  border-color: var(--primary);
+}
+textarea { resize: vertical; }
+
+/* Error banner - shown when JS errors occur */
+#error-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #dc2626;
+  color: white;
+  padding: 10px 40px 10px 12px;
+  z-index: 99999;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  max-height: 40vh;
+  overflow: auto;
+  word-break: break-word;
+  line-height: 1.4;
+}
+#error-banner .close-err {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+  padding-top: calc(8px + env(safe-area-inset-top));
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+header input { flex: 1; padding: 8px 10px; font-size: 12px; background: var(--surface-2); min-width: 0; }
+header button {
+  padding: 8px 12px;
+  background: var(--primary);
+  color: white;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+header button:active { transform: scale(0.97); }
+header button.icon {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  font-size: 16px;
+}
+
+.player-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+}
+.player-wrap iframe,
+.player-wrap #player { width: 100%; height: 100%; border: 0; }
+.player-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 12px;
+  text-align: center;
+  padding: 12px;
+  background: #1a1a1a;
+}
+
+.jump-strip {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.playlist-strip {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  padding: 6px 12px;
+  background: #1e293b;
+  color: white;
+  border-bottom: 1px solid #334155;
+}
+.playlist-btn {
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 40px;
+  transition: all 0.1s;
+}
+.playlist-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.25); }
+.playlist-btn:disabled { opacity: 0.3; }
+.playlist-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+}
+.playlist-idx {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.playlist-title {
+  font-size: 11px;
+  color: #cbd5e1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  margin-top: 2px;
+}
+body.recording-mode .playlist-strip { display: none; }
+.jump-btn {
+  flex: 1;
+  padding: 10px 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 44px;
+}
+.jump-btn:active { transform: scale(0.95); background: var(--primary-light); border-color: var(--primary); }
+.jump-btn:disabled { opacity: 0.4; color: var(--text-mute); }
+.jump-info {
+  min-width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.jump-time { font-family: ui-monospace, monospace; font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.jump-next { font-size: 10px; color: var(--text-mute); font-family: ui-monospace, monospace; margin-top: 2px; }
+
+main {
+  padding: 10px 12px;
+  padding-bottom: calc(var(--footer-h) + 10px + env(safe-area-inset-bottom));
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.act-btn {
+  padding: 10px 3px;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  transition: transform 0.1s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.15;
+  min-height: 78px;
+}
+.act-btn:active { transform: scale(0.96); }
+.act-btn:disabled { opacity: 0.4; box-shadow: none; }
+
+/* LTO & UCS: 黒縁赤色(最悪) */
+.act-btn.lto {
+  background: var(--c-lto);
+  border: 3px solid #000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.act-btn.ucs {
+  background: var(--c-ucs);
+  border: 3px solid #000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+/* 通常の赤(DTO/PF) */
+.act-btn.dto { background: var(--c-dto); }
+.act-btn.pf {
+  background: var(--c-pf);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12), inset 0 -2px 0 rgba(251,191,36,0.4);
+}
+/* 青(FD/DFL/SUCCESS) */
+.act-btn.fd { background: var(--c-fd); }
+.act-btn.dfl_own { background: var(--c-dfl_own); }
+.act-btn.success {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12), inset 0 -2px 0 rgba(251,191,36,0.5);
+}
+/* ODFL: 黄色(黒文字) */
+.act-btn.dfl_opp {
+  background: var(--c-dfl_opp);
+  color: #422006;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+}
+/* CS: 青と赤の斜め分割 */
+.act-btn.cs {
+  background: linear-gradient(to top right, var(--c-cs-red) 49.9%, var(--c-cs-blue) 50.1%);
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+
+.act-btn .lbl-main { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+.act-btn .lbl-en { font-size: 9px; opacity: 0.85; font-weight: 500; margin-top: 2px; letter-spacing: 0.1px; }
+.act-btn .lbl-desc { font-size: 8.5px; opacity: 0.72; font-weight: 400; margin-top: 2px; }
+.act-btn.dfl_opp .lbl-en,
+.act-btn.dfl_opp .lbl-desc { opacity: 0.9; }
+
+/* ============ 印刷 (PDF出力用) ============ */
+#print-view { display: none; }
+@media print {
+  @page { margin: 15mm; size: A4; }
+  html, body { background: white; }
+  body > *:not(#print-view) { display: none !important; }
+  #print-view {
+    display: block !important;
+    padding: 0;
+    font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+    color: #000;
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+  #print-view .print-header {
+    border-bottom: 2pt solid #000;
+    padding-bottom: 6pt;
+    margin-bottom: 10pt;
+  }
+  #print-view h1 { font-size: 16pt; margin-bottom: 4pt; }
+  #print-view .print-meta { font-size: 9pt; color: #444; }
+  #print-view .print-meta div { margin: 1pt 0; }
+  #print-view .print-record {
+    border-bottom: 0.5pt solid #ccc;
+    padding: 6pt 0;
+    page-break-inside: avoid;
+    margin-bottom: 3pt;
+  }
+  #print-view .pr-header {
+    display: flex;
+    gap: 6pt;
+    align-items: center;
+    margin-bottom: 3pt;
+  }
+  #print-view .pr-num {
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 10pt;
+    color: #666;
+  }
+  #print-view .pr-kind {
+    padding: 1pt 5pt;
+    background: #333;
+    color: white;
+    border-radius: 2pt;
+    font-size: 8pt;
+    font-weight: bold;
+  }
+  #print-view .pr-kind.lto, #print-view .pr-kind.ucs { background: #7f1d1d; border: 1pt solid #000; }
+  #print-view .pr-kind.dto { background: #dc2626; }
+  #print-view .pr-kind.pf { background: #be123c; }
+  #print-view .pr-kind.fd { background: #2563eb; }
+  #print-view .pr-kind.dfl_own { background: #0891b2; }
+  #print-view .pr-kind.dfl_opp { background: #eab308; color: #422006; }
+  #print-view .pr-kind.cs { background: #7c2d12; }
+  #print-view .pr-kind.success { background: #1e40af; }
+  #print-view .pr-phase {
+    padding: 1pt 4pt;
+    background: #eee;
+    border-radius: 2pt;
+    font-size: 8pt;
+  }
+  #print-view .pr-time {
+    font-family: monospace;
+    font-weight: bold;
+    color: #1a3a6e;
+  }
+  #print-view .pr-player { font-weight: bold; font-size: 11pt; }
+  #print-view .pr-details {
+    font-size: 9pt;
+    color: #333;
+    margin: 2pt 0 2pt 12pt;
+  }
+  #print-view .pr-memo {
+    font-size: 9pt;
+    color: #333;
+    margin: 2pt 0 2pt 12pt;
+    padding: 3pt 6pt;
+    background: #fef9c3;
+    border-left: 2pt solid #eab308;
+  }
+  #print-view .pr-video {
+    font-size: 8pt;
+    color: #666;
+    margin: 2pt 0 0 12pt;
+  }
+  #print-view .pr-url {
+    font-size: 7pt;
+    color: #2563eb;
+    word-break: break-all;
+    margin-left: 12pt;
+  }
+}
+
+/* PDF export button */
+.btn-pdf {
+  background: var(--surface-2);
+  color: var(--primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 4px 10px;
+  font-weight: 600;
+}
+.btn-pdf:active { background: var(--primary-light); }
+
+/* Big record mode CTA */
+.record-mode-cta { margin: 4px 0 16px; }
+.btn-record-mode-big {
+  width: 100%;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #1a3a6e 0%, #3c6aaa 100%);
+  color: white;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(26, 58, 110, 0.28);
+  text-align: left;
+  transition: transform 0.12s, box-shadow 0.12s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-record-mode-big::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+}
+.btn-record-mode-big:active {
+  transform: scale(0.985);
+  box-shadow: 0 2px 8px rgba(26, 58, 110, 0.28);
+}
+.rm-icon { font-size: 26px; flex-shrink: 0; }
+.rm-body { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rm-title { font-size: 15px; font-weight: 700; letter-spacing: 0.3px; }
+.rm-hint { font-size: 11px; opacity: 0.82; font-weight: 400; line-height: 1.35; }
+.rm-arrow { font-size: 24px; opacity: 0.7; flex-shrink: 0; font-weight: 300; }
+
+/* URL history modal */
+#url-history-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: flex-end;
+}
+#url-history-modal.visible { display: flex; }
+
+.url-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.url-history-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.url-history-item:active { background: var(--primary-light); }
+.url-history-item.current { border-color: var(--primary); background: var(--primary-light); }
+.url-history-item .url-info { flex: 1; min-width: 0; }
+.url-history-item .url-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.url-history-item .url-value {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--text-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.url-history-item .url-delete {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text-mute);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.url-history-item .url-delete:active { background: var(--danger-light); color: var(--danger); }
+.url-history-empty {
+  text-align: center;
+  color: var(--text-light);
+  padding: 24px 12px;
+  font-size: 12px;
+}
+
+.section-title {
+  font-size: 12px;
+  color: var(--text-mute);
+  margin-bottom: 8px;
+  padding: 0 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+  gap: 8px;
+}
+.section-title button { font-size: 11px; padding: 4px 8px; }
+.section-title .btn-clear { color: var(--danger); }
+
+#record-list { display: flex; flex-direction: column; gap: 6px; }
+.rec-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.rec-item:active { background: var(--surface-2); }
+.rec-header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rec-num {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-mute);
+  min-width: 34px;
+  background: var(--surface-2);
+  padding: 2px 5px;
+  border-radius: 4px;
+  text-align: center;
+}
+.rec-time {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 44px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.rec-player { font-weight: 500; }
+.rec-kind-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.rec-kind-badge.lto { background: var(--c-lto); }
+.rec-kind-badge.dto { background: var(--c-dto); }
+.rec-kind-badge.pf { background: var(--c-pf); }
+.rec-kind-badge.fd { background: var(--c-fd); }
+.rec-kind-badge.dfl_own { background: var(--c-dfl_own); }
+.rec-kind-badge.dfl_opp { background: var(--c-dfl_opp); color: #422006; }
+.rec-kind-badge.cs { background: linear-gradient(to top right, var(--c-cs-red) 49.9%, var(--c-cs-blue) 50.1%); }
+.rec-kind-badge.ucs { background: var(--c-ucs); border: 1px solid #000; }
+.rec-kind-badge.success { background: var(--c-success); }
+
+.rec-phase-badge {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+}
+.rec-phase-badge.tof { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+.rec-phase-badge.of { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
+.rec-phase-badge.tdf { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
+.rec-phase-badge.df { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+
+.rec-delete {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--text-mute);
+  font-size: 13px;
+}
+.rec-details { display: flex; gap: 4px; flex-wrap: wrap; padding-left: 4px; }
+.rec-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text-mute);
+  border: 1px solid var(--border);
+}
+.rec-tag.primary { background: var(--primary-light); color: var(--primary); border-color: var(--primary); font-weight: 500; }
+.rec-tag.pos { background: #e8f5ed; color: var(--c-pos); border-color: var(--c-pos); }
+.rec-tag.neg { background: var(--danger-light); color: var(--c-neg); border-color: var(--danger); }
+.rec-tag.star { background: #fef3c7; color: #92400e; border-color: var(--accent); }
+
+.rec-video {
+  font-size: 10px;
+  color: var(--text-light);
+  padding: 2px 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.rec-video .rv-icon { opacity: 0.5; font-size: 10px; }
+
+.empty-state { text-align: center; color: var(--text-light); padding: 24px 12px; font-size: 12px; }
+
+.event-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--footer-h) + env(safe-area-inset-bottom));
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: linear-gradient(to bottom, #1e293b, #0f172a);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  z-index: 10;
+  border-top: 2px solid var(--accent);
+  overflow: hidden;
+}
+.event-footer .accent-bar { width: 3px; height: 22px; background: var(--primary); border-radius: 2px; flex-shrink: 0; }
+.event-footer .footer-num {
+  font-family: ui-monospace, monospace;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+  min-width: 34px;
+}
+.event-footer .footer-badge { padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.4px; }
+.event-footer .footer-badge.lto { background: var(--c-lto); }
+.event-footer .footer-badge.dto { background: var(--c-dto); }
+.event-footer .footer-badge.pf { background: var(--c-pf); }
+.event-footer .footer-badge.fd { background: var(--c-fd); }
+.event-footer .footer-badge.dfl_own { background: var(--c-dfl_own); }
+.event-footer .footer-badge.dfl_opp { background: var(--c-dfl_opp); color: #422006; }
+.event-footer .footer-badge.cs { background: linear-gradient(to top right, var(--c-cs-red) 49.9%, var(--c-cs-blue) 50.1%); }
+.event-footer .footer-badge.ucs { background: var(--c-ucs); border: 1px solid #000; }
+.event-footer .footer-badge.success { background: var(--c-success); }
+.event-footer .footer-phase {
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.12);
+  color: #e2e8f0;
+  letter-spacing: 0.3px;
+}
+.event-footer .footer-player { font-weight: 600; font-size: 11px; white-space: nowrap; }
+.event-footer .footer-detail {
+  color: #cbd5e1;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 30%;
+}
+.event-footer .footer-memo {
+  color: #fef3c7;
+  font-size: 10px;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.event-footer .footer-memo::before { content: '"'; opacity: 0.6; }
+.event-footer .footer-memo::after { content: '"'; opacity: 0.6; }
+.event-footer .footer-time {
+  font-family: ui-monospace, monospace;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.event-footer .footer-idle { color: #94a3b8; font-size: 11px; letter-spacing: 0.3px; flex: 1; }
+.event-footer .footer-idle strong { color: white; margin-right: 6px; }
+.footer-nav {
+  background: rgba(255,255,255,0.12);
+  color: white;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.footer-nav:disabled { opacity: 0.25; }
+.footer-nav:active:not(:disabled) { background: rgba(255,255,255,0.25); }
+
+/* Highlight the record currently shown in footer */
+.rec-item.footer-selected {
+  background: linear-gradient(to right, #fef9c3 0%, var(--surface) 60%);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+.rec-item.footer-selected .rec-num { background: var(--accent); color: #452a03; }
+
+/* ============ 録画モード (button-triggered, previously auto-landscape) ============ */
+body.recording-mode { overflow: hidden; }
+body.recording-mode header,
+body.recording-mode .jump-strip,
+body.recording-mode .actions,
+body.recording-mode #record-list-section {
+  display: none;
+}
+body.recording-mode main {
+  padding: 0;
+  height: 0;
+}
+body.recording-mode .player-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  height: auto;
+  aspect-ratio: unset;
+  background: #000;
+  z-index: 1;
+  border-radius: 0;
+}
+body.recording-mode .player-wrap iframe,
+body.recording-mode .player-wrap #player {
+  height: 100%;
+}
+body.recording-mode .event-footer {
+  height: 46px;
+  padding-left: max(28px, env(safe-area-inset-left));
+  padding-right: max(28px, env(safe-area-inset-right));
+  gap: 8px;
+  border-top-width: 2px;
+  z-index: 2;
+}
+body.recording-mode .event-footer .accent-bar { height: 28px; width: 3px; }
+body.recording-mode .event-footer .footer-num { font-size: 14px; min-width: 40px; }
+body.recording-mode .event-footer .footer-badge { font-size: 10px; padding: 2px 6px; }
+body.recording-mode .event-footer .footer-phase { font-size: 10px; padding: 2px 5px; }
+body.recording-mode .event-footer .footer-player { font-size: 12px; }
+body.recording-mode .event-footer .footer-detail { font-size: 10px; max-width: 22%; }
+body.recording-mode .event-footer .footer-memo { font-size: 10px; }
+body.recording-mode .event-footer .footer-time { font-size: 11px; min-width: 36px; }
+body.recording-mode .event-footer .footer-idle { font-size: 11px; }
+body.recording-mode .footer-nav {
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  background: rgba(255,255,255,0.22);
+  flex-shrink: 0;
+}
+body.recording-mode .footer-nav:active:not(:disabled) { background: rgba(255,255,255,0.35); }
+body.recording-mode .player-wrap {
+  bottom: 46px;
+}
+
+/* Exit recording mode button (top-right overlay) */
+#btn-exit-recording {
+  position: fixed;
+  top: env(safe-area-inset-top, 8px);
+  right: env(safe-area-inset-right, 8px);
+  z-index: 20;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+#btn-exit-recording:active { background: rgba(0,0,0,0.8); }
+
+/* Recording mode button (in section-title area) */
+/* Edit button on record items */
+.rec-edit {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--primary);
+  font-size: 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rec-edit:active { background: var(--primary-light); }
+
+/* Modal - use .visible class */
+#record-modal, #settings-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: flex-end;
+}
+#record-modal.visible, #settings-modal.visible { display: flex; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
+.modal-content {
+  position: relative;
+  background: var(--bg);
+  width: 100%;
+  max-height: 92vh;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s ease-out;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+}
+.modal-header h2 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.kind-badge { padding: 3px 8px; border-radius: 4px; color: white; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+.kind-badge.lto { background: var(--c-lto); }
+.kind-badge.dto { background: var(--c-dto); }
+.kind-badge.pf { background: var(--c-pf); }
+.kind-badge.fd { background: var(--c-fd); }
+.kind-badge.dfl_own { background: var(--c-dfl_own); }
+.kind-badge.dfl_opp { background: var(--c-dfl_opp); color: #422006; }
+.kind-badge.cs { background: linear-gradient(to top right, var(--c-cs-red) 49.9%, var(--c-cs-blue) 50.1%); }
+.kind-badge.ucs { background: var(--c-ucs); border: 1px solid #000; }
+.kind-badge.success { background: var(--c-success); }
+.modal-num { font-family: ui-monospace, monospace; color: var(--text-mute); font-size: 12px; font-weight: 500; }
+.btn-close { width: 32px; height: 32px; border-radius: 6px; font-size: 20px; color: var(--text-mute); }
+.modal-body { padding: 12px 14px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: 10px 14px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+}
+.modal-footer button { flex: 1; height: var(--tap); border-radius: var(--radius); font-size: 15px; font-weight: 500; }
+.btn-cancel { background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text); }
+.btn-save { background: var(--primary); color: white; }
+.btn-save:disabled { background: var(--border-strong); color: white; opacity: 0.6; }
+
+.field { margin-bottom: 10px; }
+.field label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-mute);
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+.field .lbl-hint { font-size: 10px; color: var(--text-light); }
+
+.phase-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.phase-btn {
+  padding: 8px 3px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 48px;
+  line-height: 1.1;
+}
+.phase-btn .p-main { font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+.phase-btn .p-sub { font-size: 9px; opacity: 0.7; font-weight: 400; }
+.phase-btn.selected { color: white; border-color: transparent; }
+.phase-btn.selected.tof { background: var(--c-tof); }
+.phase-btn.selected.of { background: var(--c-of); }
+.phase-btn.selected.tdf { background: var(--c-tdf); }
+.phase-btn.selected.df { background: var(--c-df); }
+
+.form-section { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
+.form-section:last-child { border-bottom: none; }
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.section-icon { color: var(--primary); font-size: 8px; }
+.section-req {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--danger-light);
+  color: var(--danger);
+  font-weight: 600;
+}
+.section-req.opt { background: var(--surface-2); color: var(--text-light); border: 1px solid var(--border); }
+.section-req.multi { background: #f3e8ff; color: #7c3aed; }
+
+.time-input { display: flex; align-items: center; gap: 6px; max-width: 140px; }
+.time-input input {
+  text-align: center;
+  font-size: 18px;
+  font-family: ui-monospace, monospace;
+  padding: 6px 4px;
+  width: 56px;
+}
+.time-input span { font-size: 16px; color: var(--text-mute); font-weight: 600; }
+
+.grid { display: grid; gap: 5px; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.player-btn {
+  min-height: 38px;
+  padding: 5px 2px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.player-btn.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chips button {
+  padding: 7px 10px;
+  min-height: 36px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.chips button.selected { color: white; border-color: transparent; background: var(--primary); }
+.chips button .prefix {
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 1px 3px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 3px;
+}
+.chips button.selected .prefix { background: rgba(255,255,255,0.25); }
+.chips button.pos { border-color: var(--c-pos); color: var(--c-pos); }
+.chips button.pos.selected { background: var(--c-pos); color: white; }
+.chips button.neg { border-color: var(--c-neg); color: var(--c-neg); }
+.chips button.neg.selected { background: var(--c-neg); color: white; }
+.chips button.star { border-color: var(--accent); color: #92400e; }
+.chips button.star.selected { background: var(--accent); color: #452a03; }
+
+.covered-wrap { margin-top: 8px; padding: 8px; background: var(--surface-2); border-radius: var(--radius); border: 1px solid var(--border); }
+
+.player-context-hint {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  border-left: 3px solid var(--primary);
+}
+
+.settings-list { display: flex; flex-direction: column; gap: 6px; }
+.pl-row { display: flex; gap: 8px; align-items: center; }
+.pl-row .num { width: 26px; text-align: center; color: var(--text-mute); font-size: 12px; }
+.pl-row input { flex: 1; padding: 6px 8px; font-size: 14px; }
+
+.toast {
+  position: fixed;
+  bottom: calc(var(--footer-h) + 20px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  max-width: 80vw;
+  text-align: center;
+}
+.toast.error { background: var(--danger); }
+.toast.copy { background: var(--primary); }
+</style>
+</head>
+<body>
+
+<header>
+  <input type="text" id="url-input" placeholder="YouTubeのURLまたは再生リスト" autocomplete="off">
+  <button id="btn-load">読込</button>
+  <button class="icon" id="btn-url-history" title="URL履歴">📋</button>
+  <button class="icon" id="btn-settings" title="設定">⚙</button>
+</header>
+
+<div class="player-wrap">
+  <div id="player"></div>
+  <div class="player-placeholder" id="placeholder">
+    上のURL欄にYouTubeのURLを貼り付けて「読込」を押してください
+  </div>
+</div>
+
+<div class="playlist-strip" id="playlist-strip" hidden>
+  <button class="playlist-btn" id="btn-prev-video" title="前の動画">◀</button>
+  <div class="playlist-info">
+    <div class="playlist-idx"><span id="playlist-current">1</span> / <span id="playlist-total">1</span></div>
+    <div class="playlist-title" id="playlist-title">-</div>
+  </div>
+  <button class="playlist-btn" id="btn-next-video" title="次の動画">▶</button>
+</div>
+
+<div class="jump-strip">
+  <button class="jump-btn" id="btn-back" disabled>◀ 5秒</button>
+  <div class="jump-info">
+    <div class="jump-time" id="current-time">--:--</div>
+    <div class="jump-next">次 <span id="next-num">#001</span></div>
+  </div>
+  <button class="jump-btn" id="btn-fwd" disabled>10秒 ▶</button>
+</div>
+
+<main>
+
+<div class="actions">
+  <button class="act-btn lto" data-kind="lto" disabled>
+    <span class="lbl-main">LTO</span>
+    <span class="lbl-en">Live Turnover</span>
+    <span class="lbl-desc">即失点直結ミス</span>
+  </button>
+  <button class="act-btn dto" data-kind="dto" disabled>
+    <span class="lbl-main">DTO</span>
+    <span class="lbl-en">Dead Turnover</span>
+    <span class="lbl-desc">立て直し可能ミス</span>
+  </button>
+  <button class="act-btn pf" data-kind="pf" disabled>
+    <span class="lbl-main">PF</span>
+    <span class="lbl-en">Personal Foul</span>
+    <span class="lbl-desc">こちらの反則</span>
+  </button>
+  <button class="act-btn fd" data-kind="fd" disabled>
+    <span class="lbl-main">FD</span>
+    <span class="lbl-en">Foul Drawn</span>
+    <span class="lbl-desc">相手の反則獲得</span>
+  </button>
+  <button class="act-btn dfl_own" data-kind="dfl_own" disabled>
+    <span class="lbl-main">DFL</span>
+    <span class="lbl-en">Deflection</span>
+    <span class="lbl-desc">自チームの好守</span>
+  </button>
+  <button class="act-btn dfl_opp" data-kind="dfl_opp" disabled>
+    <span class="lbl-main">ODFL</span>
+    <span class="lbl-en">Opp Deflection</span>
+    <span class="lbl-desc">相手好守で崩さる</span>
+  </button>
+  <button class="act-btn cs" data-kind="cs" disabled>
+    <span class="lbl-main">CS</span>
+    <span class="lbl-en">Contested Shot</span>
+    <span class="lbl-desc">シュートに詰めた</span>
+  </button>
+  <button class="act-btn ucs" data-kind="ucs" disabled>
+    <span class="lbl-main">UCS</span>
+    <span class="lbl-en">Uncontested Shot</span>
+    <span class="lbl-desc">詰めきれず打たれた</span>
+  </button>
+  <button class="act-btn success" data-kind="success" disabled>
+    <span class="lbl-main">SUCCESS</span>
+    <span class="lbl-en">Successful Play</span>
+    <span class="lbl-desc">良いプレー全般</span>
+  </button>
+</div>
+
+<div class="record-mode-cta" id="record-mode-cta" hidden>
+  <button class="btn-record-mode-big" id="btn-record-mode">
+    <span class="rm-icon">📹</span>
+    <span class="rm-body">
+      <span class="rm-title">録画モードを開始</span>
+      <span class="rm-hint">スマホを横向きにして、スマホの画面録画機能で撮影</span>
+    </span>
+    <span class="rm-arrow">›</span>
+  </button>
+</div>
+
+<div id="record-list-section">
+  <div class="section-title">
+    <span>記録一覧 <span id="record-count"></span></span>
+    <span style="display:flex; gap:6px;">
+      <button class="btn-pdf" id="btn-pdf" hidden>📄 PDF</button>
+      <button class="btn-clear" id="btn-clear-all" hidden>全消去</button>
+    </span>
+  </div>
+  <div id="record-list"></div>
+</div>
+
+</main>
+
+<div id="print-view"></div>
+
+<div class="event-footer" id="event-footer">
+  <button class="footer-nav prev" id="footer-prev" title="前の記録">‹</button>
+  <div class="accent-bar"></div>
+  <div class="footer-idle" id="footer-idle">
+    <strong>塩冶オールスターズ</strong>プレー分析
+  </div>
+  <div class="footer-num" id="footer-num" hidden></div>
+  <div class="footer-badge" id="footer-badge" hidden></div>
+  <div class="footer-phase" id="footer-phase" hidden></div>
+  <div class="footer-player" id="footer-player" hidden></div>
+  <div class="footer-detail" id="footer-detail" hidden></div>
+  <div class="footer-memo" id="footer-memo" hidden></div>
+  <div class="footer-time" id="footer-time" hidden></div>
+  <button class="footer-nav next" id="footer-next" title="次の記録">›</button>
+</div>
+
+<button id="btn-exit-recording" hidden>× 通常表示に戻る</button>
+
+<div id="url-history-modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>URL履歴</h2>
+      <button class="btn-close" id="btn-close-history">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="url-history-list" id="url-history-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-save" id="btn-close-history-2">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div id="record-modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>
+        <span class="kind-badge" id="modal-kind-badge"></span>
+        <span id="modal-title">記録</span>
+        <span class="modal-num" id="modal-num"></span>
+      </h2>
+      <button class="btn-close" id="btn-close-record">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>時刻 <span class="lbl-hint">動画から自動取得</span></label>
+        <div class="time-input">
+          <input type="tel" inputmode="numeric" id="input-min" maxlength="2" placeholder="MM">
+          <span>:</span>
+          <input type="tel" inputmode="numeric" id="input-sec" maxlength="2" placeholder="SS">
+        </div>
+      </div>
+      <div class="field">
+        <label>選手</label>
+        <div id="player-grid" class="grid grid-4"></div>
+        <div class="player-context-hint" id="player-context-hint" hidden></div>
+      </div>
+      <div class="field">
+        <label>場面 <span class="section-req">必須</span></label>
+        <div class="phase-selector" id="phase-selector">
+          <button type="button" class="phase-btn tof" data-phase="tof">
+            <span class="p-main">TOF</span><span class="p-sub">Tオフェンス</span>
+          </button>
+          <button type="button" class="phase-btn of" data-phase="of">
+            <span class="p-main">OF</span><span class="p-sub">オフェンス</span>
+          </button>
+          <button type="button" class="phase-btn tdf" data-phase="tdf">
+            <span class="p-main">TDF</span><span class="p-sub">Tディフェンス</span>
+          </button>
+          <button type="button" class="phase-btn df" data-phase="df">
+            <span class="p-main">DF</span><span class="p-sub">ディフェンス</span>
+          </button>
+        </div>
+      </div>
+      <div id="form-sections"></div>
+      <div class="field">
+        <label>メモ (任意)</label>
+        <textarea id="input-memo" rows="2" placeholder="状況の補足 (MP4ファイル名に使われます)"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="btn-cancel-record">キャンセル</button>
+      <button class="btn-save" id="btn-save" disabled>保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="settings-modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>設定</h2>
+      <button class="btn-close" id="btn-close-settings">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>選手名簿</label>
+        <div class="settings-list" id="player-list-editor"></div>
+      </div>
+      <div class="field">
+        <label>管理番号</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span style="font-family:ui-monospace,monospace; font-size:15px; font-weight:600;">次: #<span id="next-num-display">001</span></span>
+          <button class="btn-cancel" id="btn-reset-num" style="padding:6px 10px; font-size:12px; height:auto; flex:none;">番号リセット</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>MP4ファイル名の書式</label>
+        <div style="font-family:ui-monospace,monospace; font-size:11px; background:var(--surface-2); padding:8px; border-radius:6px; border:1px dashed var(--border-strong);">
+          管理番号_場面_種別_メモ_出力年月日.mp4<br>
+          <span style="color:var(--text-light);">例: 001_OF_LTO_田中がパニック_20260810.mp4</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-save" id="btn-close-settings-2">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ ERROR CATCHER (top priority) ============
+window.addEventListener('error', function(e) {
+  try {
+    var existing = document.getElementById('error-banner');
+    if (existing) existing.remove();
+    var msg = 'エラー: ' + (e.message || 'unknown');
+    if (e.filename) msg += '\nファイル: ' + e.filename;
+    if (e.lineno) msg += '\n行: ' + e.lineno + ':' + (e.colno || '?');
+    if (e.error && e.error.stack) msg += '\n' + String(e.error.stack).slice(0, 500);
+    var banner = document.createElement('div');
+    banner.id = 'error-banner';
+    banner.textContent = msg;
+    var close = document.createElement('button');
+    close.className = 'close-err';
+    close.textContent = '×';
+    close.onclick = function() { banner.remove(); };
+    banner.appendChild(close);
+    document.body.appendChild(banner);
+  } catch (err) { /* ignore */ }
+});
+
+// Global error function for use in code
+function showError(context, err) {
+  try {
+    var msg = context + ': ' + (err && err.message ? err.message : String(err));
+    var existing = document.getElementById('error-banner');
+    if (existing) existing.remove();
+    var banner = document.createElement('div');
+    banner.id = 'error-banner';
+    banner.textContent = msg;
+    var close = document.createElement('button');
+    close.className = 'close-err';
+    close.textContent = '×';
+    close.onclick = function() { banner.remove(); };
+    banner.appendChild(close);
+    document.body.appendChild(banner);
+  } catch (e) { /* ignore */ }
+}
+
+// ============ MAIN SCRIPT ============
+(function main() {
+try {
+
+var STORAGE_KEY = 'play_analyzer_mini_v14';
+
+var KIND_BADGE = { lto: 'LTO', dto: 'DTO', pf: 'PF', fd: 'FD', dfl_own: 'DFL', dfl_opp: 'ODFL', cs: 'CS', ucs: 'UCS', success: 'SUCCESS' };
+var KIND_TITLE = {
+  lto: 'LTO (Live Turnover) を記録',
+  dto: 'DTO (Dead Turnover) を記録',
+  pf: 'PF (Personal Foul) を記録',
+  fd: 'FD (Foul Drawn) を記録',
+  dfl_own: 'DFL (Deflection) を記録',
+  dfl_opp: 'ODFL (Opponent Deflection) を記録',
+  cs: 'CS (Contested Shot) を記録',
+  ucs: 'UCS (Uncontested Shot) を記録',
+  success: 'SUCCESS (Successful Play) を記録'
+};
+var PHASE_LABELS = { tof: 'TOF', of: 'OF', tdf: 'TDF', df: 'DF' };
+
+var FIELD_DEFS = {
+  ltoResult: { label: 'プレー結果', options: { intercept: 'インターセプト', steal: 'ドリブルスティール', fumble: 'ファンブル' } },
+  ltoLocation: { label: '発生エリア', options: { own_advance: '自陣運び (プレス回避失敗)', transition: 'トランジション', paint: 'ペイント内' } },
+  ltoPsych: { label: '心理・判断', options: { panic: 'パニック / 逃げ', cascade: '連鎖 (カスケード)', no_comm: '連携・声不足' }, tone: 'neg' },
+  dtoResult: { label: 'プレー結果', options: { travel: 'トラベル', o_foul: 'Oファウル', oob: 'アウトオブバウンズ', violation: 'バイオレーション (3/5/8/24秒)' } },
+  dtoFactor: { label: '発生要因', options: { push_out: '突き出しズレ', spacing: 'スペーシング不良', shot_clock: 'ショットクロック圧迫' } },
+  dtoPsych: { label: '心理・判断', options: { challenge: 'チャレンジ', judgment: '判断遅れ' }, toneMap: { challenge: 'pos', judgment: 'neg' } },
+  pfPhysical: {
+    label: '身体・技術要因',
+    options: { ht: 'ヒット', b: 'ブロッキング', p: 'プッシング', hd: 'ホールディング', c: 'シリンダー' },
+    prefixMap: { ht: 'HT', b: 'B', p: 'P', hd: 'HD', c: 'C' }
+  },
+  pfTactical: { label: '戦術要因', options: { covered: 'かばった (1線が抜かれた)', good_foul: 'グッドファウル' }, toneMap: { covered: null, good_foul: 'pos' } },
+  pfPsych: { label: '心理要因', options: { emotional: '感情・報復' }, tone: 'neg' },
+  fdContribution: {
+    label: '貢献種別',
+    options: { speed: 'スピード突破', fake: 'フェイク駆け引き', screen: 'ナイススクリーン', hustle: '泥臭いハッスル', seal: 'ポストシール' }
+  },
+  fdImpact: {
+    label: '試合展開への影響',
+    options: { and_one: 'And-1', bonus: 'ボーナス獲得', key_trouble: 'キーマントラブル' },
+    multi: true, tone: 'star'
+  },
+  dflOwnType: {
+    label: 'ディフレクション種別',
+    options: { pass: '相手のパスに触れた', dribble: '相手のドリブルに触れた', shot: '相手のシュートに触れた', tip: '相手のリバウンドをタップ' }
+  },
+  dflOwnResult: {
+    label: '結果',
+    options: { recovered: '味方が獲得', oob: 'アウトオブバウンズ', opponent_kept: '相手継続' },
+    toneMap: { recovered: 'pos', oob: null, opponent_kept: null }
+  },
+  dflOwnSituation: {
+    label: '場面詳細',
+    options: { press: '1線プレッシャー', help: 'ヘルプディフェンス', anticipation: '予測・読み', transition: 'トランジション' }
+  },
+  dflOppType: {
+    label: '崩された種別',
+    options: { pass: '味方のパスに触れられた', dribble: '味方のドリブルに触れられた', shot: '味方のシュートに触れられた', tip: '味方のリバウンドをタップされた' }
+  },
+  dflOppResult: {
+    label: '結果',
+    options: { opponent_got: '相手が獲得', oob: 'アウトオブバウンズ', kept: '味方継続' },
+    toneMap: { opponent_got: 'neg', oob: null, kept: 'pos' }
+  },
+  dflOppSituation: {
+    label: '崩された場面詳細',
+    options: { half_court: 'ハーフコートオフェンス', transition: 'トランジション', pass_out: 'パスアウト', drive_kick: 'ドライブキック' }
+  },
+  csOutcome: {
+    label: 'コンテスト結果',
+    options: {
+      fm: 'フォースドミス (外させた)',
+      ds: '守り切った',
+      cm: 'コンテストしたが決められた',
+      bb: 'ブローバイ (置き去りにされた)',
+      db: '陣形崩壊 (抜かれてDF全体が崩れた)'
+    },
+    prefixMap: { fm: 'FM', ds: 'DS', cm: 'CM', bb: 'BB', db: 'DB' },
+    toneMap: { fm: 'pos', ds: 'pos', cm: 'neg', bb: 'neg', db: 'neg' }
+  },
+  ucsOutcome: {
+    label: '結果',
+    options: {
+      fgm: '決められた',
+      missed: '外れた (救われた)'
+    },
+    prefixMap: { fgm: 'FGM', missed: 'Miss' },
+    toneMap: { fgm: 'neg', missed: null }
+  },
+  successType: {
+    label: 'プレータイプ',
+    options: {
+      nice_play: 'NICE PLAY (良いプレー)',
+      challenge: 'CHALLENGE (チャレンジしたプレー)'
+    },
+    prefixMap: { nice_play: 'NP', challenge: 'CH' },
+    toneMap: { nice_play: 'pos', challenge: 'pos' }
+  }
+};
+
+var EVENT_KINDS = {
+  lto: { sections: [ { key: 'ltoResult', required: true }, { key: 'ltoLocation', required: false }, { key: 'ltoPsych', required: false } ], playerHint: 'ミスをした選手', defaultPhase: 'of' },
+  dto: { sections: [ { key: 'dtoResult', required: true }, { key: 'dtoFactor', required: false }, { key: 'dtoPsych', required: false } ], playerHint: 'ミスをした選手', defaultPhase: 'of' },
+  pf: { sections: [ { key: 'pfPhysical', required: true }, { key: 'pfTactical', required: false, extraPlayer: { when: 'covered', label: 'かばった選手' } }, { key: 'pfPsych', required: false } ], playerHint: 'ファウルをした選手', defaultPhase: 'df' },
+  fd: {
+    sections: [ { key: 'fdContribution', required: true }, { key: 'fdImpact', required: false, multi: true } ],
+    hasOriginator: true, originatorLabel: '起点選手', originatorHint: '誰の動きが呼び込んだか',
+    playerHint: 'ファウルを獲った選手', defaultPhase: 'of'
+  },
+  dfl_own: {
+    sections: [ { key: 'dflOwnType', required: true }, { key: 'dflOwnResult', required: false }, { key: 'dflOwnSituation', required: false } ],
+    hasOriginator: true, originatorLabel: '共同貢献選手', originatorHint: '状況を作った選手',
+    playerHint: 'ディフレクションを行った自チーム選手', defaultPhase: 'df'
+  },
+  dfl_opp: {
+    sections: [ { key: 'dflOppType', required: true }, { key: 'dflOppResult', required: false }, { key: 'dflOppSituation', required: false } ],
+    playerHint: 'プレーを崩された自チーム選手', defaultPhase: 'of'
+  },
+  cs: {
+    sections: [ { key: 'csOutcome', required: true } ],
+    playerHint: 'コンテストした自チーム選手', defaultPhase: 'df'
+  },
+  ucs: {
+    sections: [ { key: 'ucsOutcome', required: true } ],
+    playerHint: 'マークすべきだった自チーム選手', defaultPhase: 'df'
+  },
+  success: {
+    sections: [ { key: 'successType', required: true } ],
+    playerHint: '良いプレーをした選手', defaultPhase: 'of'
+  }
+};
+
+var state = loadState();
+var player = null;
+var apiReady = false;
+var pendingLoad = null;
+var currentTimeTimer = null;
+var currentKind = null;
+var draftEvent = {};
+var currentFooterRecordId = null;
+var editingRecordId = null;
+
+function loadState() {
+  try {
+    var s = localStorage.getItem(STORAGE_KEY);
+    if (s) {
+      var parsed = JSON.parse(s);
+      if (!parsed.urlHistory) parsed.urlHistory = [];
+      return parsed;
+    }
+  } catch (e) {}
+  return { players: defaultPlayers(), events: [], lastUrl: '', urlHistory: [], nextNumber: 1 };
+}
+function defaultPlayers() {
+  var arr = [];
+  for (var i = 1; i <= 20; i++) arr.push({ id: 'p' + i, name: '選手' + i });
+  return arr;
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { showError('保存失敗', e); }
+}
+function toast(msg, cls) {
+  try {
+    var t = document.createElement('div');
+    t.className = 'toast' + (cls ? ' ' + cls : '');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 1800);
+  } catch (e) {}
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(m) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+function secToMMSS(sec) {
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  return String(m).length < 2 ? ('0' + m) : String(m);
+}
+function padStr2(n) { return String(n).length < 2 ? ('0' + n) : String(n); }
+function fmtTime(sec) { return padStr2(Math.floor(sec / 60)) + ':' + padStr2(sec % 60); }
+function playerById(id) {
+  for (var i = 0; i < state.players.length; i++) {
+    if (state.players[i].id === id) return state.players[i];
+  }
+  return null;
+}
+function padNum(n) {
+  var s = String(n);
+  while (s.length < 3) s = '0' + s;
+  return s;
+}
+function getEventPhase(event) {
+  if (event.phase) return event.phase;
+  var config = EVENT_KINDS[event.kind];
+  return (config && config.defaultPhase) || 'of';
+}
+
+function isModalOpen() {
+  return document.getElementById('record-modal').classList.contains('visible') ||
+         document.getElementById('settings-modal').classList.contains('visible');
+}
+function showModal(id) { document.getElementById(id).classList.add('visible'); }
+function hideModal(id) { document.getElementById(id).classList.remove('visible'); }
+
+function todayForFilename() {
+  var d = new Date();
+  return d.getFullYear() + padStr2(d.getMonth()+1) + padStr2(d.getDate());
+}
+function sanitizeMemo(memo) {
+  if (!memo || !memo.replace(/\s+/g, '')) return '無記載';
+  return memo.replace(/[\/\\:*?"<>|\n\r\t]/g, '').replace(/\s+/g, '_').substr(0, 40);
+}
+function generateFilename(event, useDate) {
+  var num = padNum(event.managementNumber);
+  var phase = PHASE_LABELS[getEventPhase(event)] || 'X';
+  var kind = KIND_BADGE[event.kind];
+  var memo = sanitizeMemo(event.memo);
+  var dateStr = useDate || todayForFilename();
+  return num + '_' + phase + '_' + kind + '_' + memo + '_' + dateStr + '.mp4';
+}
+function copyFilename(id) {
+  var event = null;
+  for (var i = 0; i < state.events.length; i++) {
+    if (state.events[i].id === id) { event = state.events[i]; break; }
+  }
+  if (!event) return;
+  var filename = generateFilename(event);
+  var doCopyFallback = function() {
+    var ta = document.createElement('textarea');
+    ta.value = filename;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      toast('#' + padNum(event.managementNumber) + ' をコピー', 'copy');
+    } catch (e2) {
+      toast('コピーに失敗しました', 'error');
+    }
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(filename).then(function() {
+      toast('#' + padNum(event.managementNumber) + ' をコピー', 'copy');
+    }).catch(doCopyFallback);
+  } else {
+    doCopyFallback();
+  }
+}
+
+// ============ YOUTUBE ============
+var ytTag = document.createElement('script');
+ytTag.src = 'https://www.youtube.com/iframe_api';
+document.head.appendChild(ytTag);
+window.onYouTubeIframeAPIReady = function() {
+  apiReady = true;
+  if (pendingLoad) { pendingLoad(); pendingLoad = null; }
+};
+
+function extractIds(url) {
+  var videoMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/live\/)([^&?\s\/]+)/);
+  var listMatch = url.match(/[?&]list=([^&\s]+)/);
+  var directIdMatch = url.replace(/\s+/g, '').match(/^([a-zA-Z0-9_-]{11})$/);
+  return {
+    videoId: videoMatch ? videoMatch[1] : (directIdMatch ? directIdMatch[1] : null),
+    playlistId: listMatch ? listMatch[1] : null
+  };
+}
+
+function loadVideo() {
+  try {
+    var urlEl = document.getElementById('url-input');
+    var url = urlEl.value.replace(/^\s+|\s+$/g, '');
+    if (!url) { toast('URLを入力してください', 'error'); return; }
+    var ids = extractIds(url);
+    if (!ids.videoId && !ids.playlistId) { toast('YouTube URLとして解析できません', 'error'); return; }
+    state.lastUrl = url;
+    addToUrlHistory(url);
+    saveState();
+    document.getElementById('placeholder').style.display = 'none';
+    var doLoad = function() {
+      var config = {
+        height: '100%', width: '100%',
+        playerVars: { playsinline: 1, rel: 0, modestbranding: 1, fs: 1 },
+        events: { onReady: onPlayerReady, onError: onPlayerError, onStateChange: onPlayerStateChange }
+      };
+      if (ids.playlistId) {
+        config.playerVars.list = ids.playlistId;
+        config.playerVars.listType = 'playlist';
+        if (ids.videoId) config.videoId = ids.videoId;
+      } else {
+        config.videoId = ids.videoId;
+      }
+      if (player) {
+        if (ids.playlistId) player.loadPlaylist({ list: ids.playlistId, listType: 'playlist' });
+        else player.loadVideoById(ids.videoId);
+      } else {
+        player = new YT.Player('player', config);
+      }
+    };
+    if (apiReady) doLoad(); else pendingLoad = doLoad;
+  } catch (e) { showError('loadVideo', e); }
+}
+
+// ============ URL HISTORY ============
+function addToUrlHistory(url) {
+  if (!state.urlHistory) state.urlHistory = [];
+  // Remove if exists
+  var filtered = [];
+  for (var i = 0; i < state.urlHistory.length; i++) {
+    if (state.urlHistory[i].url !== url) filtered.push(state.urlHistory[i]);
+  }
+  filtered.unshift({ url: url, title: '', addedAt: Date.now() });
+  if (filtered.length > 30) filtered = filtered.slice(0, 30);
+  state.urlHistory = filtered;
+}
+
+function updateUrlHistoryTitle(url, title) {
+  if (!state.urlHistory || !title) return;
+  var changed = false;
+  for (var i = 0; i < state.urlHistory.length; i++) {
+    if (state.urlHistory[i].url === url && state.urlHistory[i].title !== title) {
+      state.urlHistory[i].title = title;
+      changed = true;
+    }
+  }
+  if (changed) saveState();
+}
+
+function renderUrlHistory() {
+  var list = document.getElementById('url-history-list');
+  if (!state.urlHistory || state.urlHistory.length === 0) {
+    list.innerHTML = '<div class="url-history-empty">履歴がありません<br>URLを読み込むとここに追加されます</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < state.urlHistory.length; i++) {
+    var item = state.urlHistory[i];
+    var isCurrent = item.url === state.lastUrl;
+    var title = item.title || '(タイトル未取得)';
+    var displayUrl = item.url.length > 60 ? item.url.substr(0, 57) + '...' : item.url;
+    html += '<div class="url-history-item' + (isCurrent ? ' current' : '') + '" data-url="' + escapeHtml(item.url) + '">' +
+      '<div class="url-info">' +
+        '<div class="url-title">' + escapeHtml(title) + '</div>' +
+        '<div class="url-value">' + escapeHtml(displayUrl) + '</div>' +
+      '</div>' +
+      '<button class="url-delete" data-url="' + escapeHtml(item.url) + '">×</button>' +
+    '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function openUrlHistory() {
+  renderUrlHistory();
+  showModal('url-history-modal');
+}
+function closeUrlHistory() { hideModal('url-history-modal'); }
+
+function selectUrlFromHistory(url) {
+  document.getElementById('url-input').value = url;
+  closeUrlHistory();
+  loadVideo();
+}
+
+function deleteUrlFromHistory(url) {
+  if (!state.urlHistory) return;
+  var filtered = [];
+  for (var i = 0; i < state.urlHistory.length; i++) {
+    if (state.urlHistory[i].url !== url) filtered.push(state.urlHistory[i]);
+  }
+  state.urlHistory = filtered;
+  saveState();
+  renderUrlHistory();
+}
+
+function onPlayerReady() {
+  try {
+    var btns = document.querySelectorAll('.act-btn');
+    for (var i = 0; i < btns.length; i++) btns[i].disabled = false;
+    document.getElementById('btn-back').disabled = false;
+    document.getElementById('btn-fwd').disabled = false;
+    startCurrentTimeUpdate();
+    setTimeout(function() {
+      updatePlaylistUI();
+      updateCurrentVideoTitle();
+    }, 800);
+    toast('動画を読み込みました');
+  } catch (e) { showError('onPlayerReady', e); }
+}
+function onPlayerError(e) {
+  var codes = { 2: 'URLが不正', 5: '再生不可', 100: '動画が見つかりません', 101: '埋め込み拒否', 150: '埋め込み拒否' };
+  toast('エラー: ' + (codes[e.data] || '不明'), 'error');
+}
+function onPlayerStateChange(e) {
+  updatePlaylistUI();
+  updateCurrentVideoTitle();
+}
+
+function updateCurrentVideoTitle() {
+  try {
+    if (!player || !player.getVideoData) return;
+    var vd = player.getVideoData();
+    if (vd && vd.title && state.lastUrl) {
+      updateUrlHistoryTitle(state.lastUrl, vd.title);
+    }
+  } catch (e) {}
+}
+
+function getCurrentVideoInfo() {
+  var info = { videoId: null, videoTitle: null, playlistIndex: null };
+  if (!player) return info;
+  try {
+    var vd = player.getVideoData();
+    if (vd) {
+      info.videoId = vd.video_id || null;
+      info.videoTitle = vd.title || null;
+    }
+  } catch (e) {}
+  try {
+    var playlist = player.getPlaylist();
+    if (playlist && playlist.length > 0) {
+      info.playlistIndex = player.getPlaylistIndex();
+    }
+  } catch (e) {}
+  return info;
+}
+
+function updatePlaylistUI() {
+  try {
+    if (!player) return;
+    var strip = document.getElementById('playlist-strip');
+    var playlist = null;
+    try { playlist = player.getPlaylist(); } catch (e) {}
+    if (playlist && playlist.length > 0) {
+      strip.hidden = false;
+      var idx = 0;
+      try { idx = player.getPlaylistIndex(); } catch (e) {}
+      document.getElementById('playlist-current').textContent = (idx + 1);
+      document.getElementById('playlist-total').textContent = playlist.length;
+      var title = '';
+      try {
+        var vd = player.getVideoData();
+        if (vd && vd.title) title = vd.title;
+      } catch (e) {}
+      document.getElementById('playlist-title').textContent = title || '(動画 ' + (idx + 1) + ')';
+      document.getElementById('btn-prev-video').disabled = idx <= 0;
+      document.getElementById('btn-next-video').disabled = idx >= playlist.length - 1;
+    } else {
+      strip.hidden = true;
+    }
+  } catch (e) {}
+}
+
+function playPrevVideo() {
+  if (!player) return;
+  try {
+    var idx = player.getPlaylistIndex();
+    if (idx > 0) {
+      player.playVideoAt(idx - 1);
+      setTimeout(updatePlaylistUI, 600);
+    }
+  } catch (e) {}
+}
+function playNextVideo() {
+  if (!player) return;
+  try {
+    var idx = player.getPlaylistIndex();
+    var playlist = player.getPlaylist();
+    if (idx < playlist.length - 1) {
+      player.playVideoAt(idx + 1);
+      setTimeout(updatePlaylistUI, 600);
+    }
+  } catch (e) {}
+}
+function startCurrentTimeUpdate() {
+  if (currentTimeTimer) clearInterval(currentTimeTimer);
+  currentTimeTimer = setInterval(function() {
+    if (player && player.getCurrentTime) {
+      try {
+        var t = Math.floor(player.getCurrentTime());
+        document.getElementById('current-time').textContent = fmtTime(t);
+      } catch (e) {}
+    }
+  }, 250);
+}
+function jumpSeconds(delta) {
+  if (!player || !player.getCurrentTime) return;
+  try {
+    var current = player.getCurrentTime();
+    var target = Math.max(0, current + delta);
+    player.seekTo(target, true);
+    document.getElementById('current-time').textContent = fmtTime(Math.floor(target));
+  } catch (e) {}
+}
+
+function startRecord(kind) {
+  try {
+    if (!player) { toast('先に動画を読み込んでください', 'error'); return; }
+    if (isModalOpen()) return;
+    currentKind = kind;
+    var sec = Math.floor(player.getCurrentTime());
+    try { player.pauseVideo(); } catch (e) {}
+    openForm(kind, sec);
+  } catch (e) { showError('startRecord', e); }
+}
+
+function openForm(kind, sec, existingRecord) {
+  var config = EVENT_KINDS[kind];
+  var isEdit = !!existingRecord;
+
+  var badge = document.getElementById('modal-kind-badge');
+  badge.className = 'kind-badge ' + kind;
+  badge.textContent = KIND_BADGE[kind];
+
+  if (isEdit) {
+    document.getElementById('modal-title').textContent = '編集';
+    document.getElementById('modal-num').textContent = '#' + padNum(existingRecord.managementNumber);
+    document.getElementById('btn-save').textContent = '更新';
+  } else {
+    document.getElementById('modal-title').textContent = KIND_TITLE[kind];
+    document.getElementById('modal-num').textContent = '#' + padNum(state.nextNumber);
+    document.getElementById('btn-save').textContent = '保存';
+  }
+
+  document.getElementById('input-min').value = padStr2(Math.floor(sec / 60));
+  document.getElementById('input-sec').value = padStr2(sec % 60);
+  document.getElementById('input-memo').value = isEdit ? (existingRecord.memo || '') : '';
+
+  var grid = document.getElementById('player-grid');
+  grid.innerHTML = '';
+  for (var i = 0; i < state.players.length; i++) {
+    (function(p) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'player-btn';
+      b.textContent = p.name;
+      b.setAttribute('data-pid', p.id);
+      b.onclick = function() { selectPlayer(p.id); };
+      grid.appendChild(b);
+    })(state.players[i]);
+  }
+
+  var hintEl = document.getElementById('player-context-hint');
+  if (config.playerHint) {
+    hintEl.textContent = config.playerHint;
+    hintEl.hidden = false;
+  } else {
+    hintEl.hidden = true;
+  }
+
+  // Setup draftEvent
+  if (isEdit) {
+    draftEvent = { kind: kind, phase: existingRecord.phase };
+    draftEvent.playerId = existingRecord.playerId;
+    for (var s = 0; s < config.sections.length; s++) {
+      var skey = config.sections[s].key;
+      if (existingRecord[skey] !== undefined) draftEvent[skey] = existingRecord[skey];
+    }
+    if (existingRecord.coveredForId) draftEvent.coveredForId = existingRecord.coveredForId;
+    if (existingRecord.originatorId) draftEvent.originatorId = existingRecord.originatorId;
+  } else {
+    draftEvent = { kind: kind, phase: config.defaultPhase || 'of' };
+  }
+
+  var phaseBtns = document.querySelectorAll('.phase-btn');
+  for (var j = 0; j < phaseBtns.length; j++) {
+    if (phaseBtns[j].getAttribute('data-phase') === draftEvent.phase) {
+      phaseBtns[j].classList.add('selected');
+    } else {
+      phaseBtns[j].classList.remove('selected');
+    }
+  }
+
+  document.getElementById('form-sections').innerHTML = buildSectionsHTML(kind);
+
+  // Pre-fill visual state if editing
+  if (isEdit) prefillFormUI();
+
+  showModal('record-modal');
+  validateSave();
+}
+
+function prefillFormUI() {
+  var config = EVENT_KINDS[currentKind];
+  // Player button
+  if (draftEvent.playerId) {
+    var pBtns = document.querySelectorAll('.player-btn');
+    for (var i = 0; i < pBtns.length; i++) {
+      if (pBtns[i].getAttribute('data-pid') === draftEvent.playerId) {
+        pBtns[i].classList.add('selected');
+        break;
+      }
+    }
+  }
+  // Chip selections
+  for (var s = 0; s < config.sections.length; s++) {
+    var section = config.sections[s];
+    var key = section.key;
+    var val = draftEvent[key];
+    if (!val) continue;
+    if (Object.prototype.toString.call(val) === '[object Array]') {
+      for (var v = 0; v < val.length; v++) {
+        var mbtn = document.querySelector('.chips[data-key="' + key + '"] button[data-val="' + val[v] + '"]');
+        if (mbtn) mbtn.classList.add('selected');
+      }
+    } else {
+      var btn = document.querySelector('.chips[data-key="' + key + '"] button[data-val="' + val + '"]');
+      if (btn) btn.classList.add('selected');
+      if (key === 'pfTactical' && val === 'covered') {
+        var w = document.getElementById('covered-wrap');
+        if (w) w.hidden = false;
+      }
+    }
+  }
+  // Selects
+  if (draftEvent.coveredForId) {
+    var cfSel = document.getElementById('input-covered-for');
+    if (cfSel) cfSel.value = draftEvent.coveredForId;
+  }
+  if (draftEvent.originatorId) {
+    var oriSel = document.getElementById('input-originator');
+    if (oriSel) oriSel.value = draftEvent.originatorId;
+  }
+}
+
+function openForEdit(recordId) {
+  try {
+    var record = findRecordById(recordId);
+    if (!record) return;
+    editingRecordId = recordId;
+    currentKind = record.kind;
+    try { if (player && player.pauseVideo) player.pauseVideo(); } catch (e) {}
+    openForm(record.kind, record.timeSec, record);
+  } catch (e) { showError('openForEdit', e); }
+}
+
+function buildSectionsHTML(kind) {
+  var config = EVENT_KINDS[kind];
+  var html = '';
+  for (var i = 0; i < config.sections.length; i++) {
+    var section = config.sections[i];
+    var def = FIELD_DEFS[section.key];
+    var reqBadge = section.multi
+      ? '<span class="section-req multi">複数選択可</span>'
+      : (section.required ? '<span class="section-req">必須</span>' : '<span class="section-req opt">任意</span>');
+    html += '<div class="form-section">' +
+      '<div class="section-header">' +
+        '<span class="section-icon">◆</span>' +
+        '<span>' + escapeHtml(def.label) + '</span>' +
+        reqBadge +
+      '</div>' +
+      '<div class="chips" data-key="' + section.key + '"' + (section.multi ? ' data-multi="1"' : '') + '>';
+    var keys = Object.keys(def.options);
+    for (var k = 0; k < keys.length; k++) {
+      var optKey = keys[k];
+      var optVal = def.options[optKey];
+      var cls = '';
+      if (def.tone) cls = def.tone;
+      if (def.toneMap && def.toneMap[optKey]) cls = def.toneMap[optKey];
+      var prefix = (def.prefixMap && def.prefixMap[optKey]) ? '<span class="prefix">' + escapeHtml(def.prefixMap[optKey]) + '</span>' : '';
+      var suffix = def.tone === 'star' ? ' ★' : (cls === 'pos' ? ' (+)' : (cls === 'neg' ? ' (-)' : ''));
+      html += '<button data-val="' + optKey + '" class="' + cls + '">' + prefix + '<span>' + escapeHtml(optVal) + suffix + '</span></button>';
+    }
+    html += '</div>';
+    if (section.extraPlayer) {
+      html += '<div class="covered-wrap" id="covered-wrap" hidden>' +
+        '<label style="font-size:11px; color:var(--text-mute); margin-bottom:4px; display:block;">' + escapeHtml(section.extraPlayer.label) + '</label>' +
+        '<select id="input-covered-for"><option value="">-- 指定なし --</option>';
+      for (var pi = 0; pi < state.players.length; pi++) {
+        html += '<option value="' + state.players[pi].id + '">' + escapeHtml(state.players[pi].name) + '</option>';
+      }
+      html += '</select></div>';
+    }
+    html += '</div>';
+  }
+  if (config.hasOriginator) {
+    html += '<div class="form-section">' +
+      '<div class="section-header">' +
+        '<span class="section-icon">◆</span>' +
+        '<span>' + escapeHtml(config.originatorLabel || '起点選手') + '</span>' +
+        '<span class="section-req opt">任意</span>' +
+      '</div>' +
+      '<select id="input-originator"><option value="">-- 指定なし --</option>';
+    for (var pj = 0; pj < state.players.length; pj++) {
+      html += '<option value="' + state.players[pj].id + '">' + escapeHtml(state.players[pj].name) + '</option>';
+    }
+    html += '</select>' +
+      '<div class="lbl-hint" style="margin-top:4px; font-size:10px;">' + escapeHtml(config.originatorHint || '') + '</div>' +
+      '</div>';
+  }
+  return html;
+}
+
+function selectPlayer(pid) {
+  var btns = document.querySelectorAll('.player-btn');
+  for (var i = 0; i < btns.length; i++) {
+    if (btns[i].getAttribute('data-pid') === pid) btns[i].classList.add('selected');
+    else btns[i].classList.remove('selected');
+  }
+  draftEvent.playerId = pid;
+  validateSave();
+}
+
+function validateSave() {
+  try {
+    var mm = document.getElementById('input-min').value;
+    var ss = document.getElementById('input-sec').value;
+    var ok = mm !== '' && ss !== '' && draftEvent.playerId && draftEvent.phase;
+    if (ok && currentKind) {
+      var config = EVENT_KINDS[currentKind];
+      for (var i = 0; i < config.sections.length; i++) {
+        if (config.sections[i].required && !draftEvent[config.sections[i].key]) { ok = false; break; }
+      }
+    }
+    document.getElementById('btn-save').disabled = !ok;
+  } catch (e) { showError('validateSave', e); }
+}
+
+function closeModal() {
+  hideModal('record-modal');
+  currentKind = null;
+  draftEvent = {};
+  editingRecordId = null;
+  document.getElementById('btn-save').textContent = '保存';
+}
+
+function saveRecord() {
+  try {
+    var mm = padStr2(document.getElementById('input-min').value);
+    var ss = padStr2(document.getElementById('input-sec').value);
+    var memo = document.getElementById('input-memo').value.replace(/^\s+|\s+$/g, '');
+    var timeSec = parseInt(mm) * 60 + parseInt(ss);
+    var config = EVENT_KINDS[currentKind];
+    var videoInfo = getCurrentVideoInfo();
+
+    if (editingRecordId) {
+      // Update existing record
+      var idx = -1;
+      for (var i = 0; i < state.events.length; i++) {
+        if (state.events[i].id === editingRecordId) { idx = i; break; }
+      }
+      if (idx === -1) return;
+      var rec = state.events[idx];
+      rec.kind = currentKind;
+      rec.phase = draftEvent.phase;
+      rec.time = mm + ':' + ss;
+      rec.timeSec = timeSec;
+      rec.playerId = draftEvent.playerId;
+      rec.memo = memo;
+      // Update video info (in case they scrubbed to a different video before editing)
+      if (videoInfo.videoId) {
+        rec.videoId = videoInfo.videoId;
+        if (videoInfo.videoTitle) rec.videoTitle = videoInfo.videoTitle;
+        if (videoInfo.playlistIndex !== null) rec.playlistIndex = videoInfo.playlistIndex;
+      }
+      // Reset section values and set new ones
+      for (var j = 0; j < config.sections.length; j++) {
+        var key = config.sections[j].key;
+        if (draftEvent[key] !== undefined) rec[key] = draftEvent[key];
+        else delete rec[key];
+      }
+      delete rec.coveredForId;
+      delete rec.originatorId;
+      var cf = document.getElementById('input-covered-for');
+      if (cf && cf.value) rec.coveredForId = cf.value;
+      var ori = document.getElementById('input-originator');
+      if (ori && ori.value) rec.originatorId = ori.value;
+
+      saveState();
+      toast('#' + padNum(rec.managementNumber) + ' を更新しました');
+      currentFooterRecordId = rec.id;
+      closeModal();
+      updateFooter(rec);
+      renderRecordList();
+    } else {
+      // Create new record
+      var now = Date.now();
+      var managementNumber = state.nextNumber;
+      var record = {
+        id: 'ev_' + now, managementNumber: managementNumber, kind: currentKind, phase: draftEvent.phase,
+        time: mm + ':' + ss, timeSec: timeSec, playerId: draftEvent.playerId, memo: memo, createdAt: now
+      };
+      if (videoInfo.videoId) {
+        record.videoId = videoInfo.videoId;
+        if (videoInfo.videoTitle) record.videoTitle = videoInfo.videoTitle;
+        if (videoInfo.playlistIndex !== null) record.playlistIndex = videoInfo.playlistIndex;
+      }
+      for (var k = 0; k < config.sections.length; k++) {
+        var skey = config.sections[k].key;
+        if (draftEvent[skey] !== undefined) record[skey] = draftEvent[skey];
+      }
+      var cf2 = document.getElementById('input-covered-for');
+      if (cf2 && cf2.value) record.coveredForId = cf2.value;
+      var ori2 = document.getElementById('input-originator');
+      if (ori2 && ori2.value) record.originatorId = ori2.value;
+
+      state.events.push(record);
+      state.nextNumber = managementNumber + 1;
+      currentFooterRecordId = record.id;
+      saveState();
+      toast('#' + padNum(managementNumber) + ' を記録しました');
+      closeModal();
+      updateFooter(record);
+      updateNextNumDisplay();
+      renderRecordList();
+      // Do NOT auto-play video after save
+    }
+  } catch (e) { showError('saveRecord', e); }
+}
+
+function updateFooter(event) {
+  document.getElementById('footer-idle').hidden = true;
+  var ids = ['footer-num', 'footer-badge', 'footer-phase', 'footer-player', 'footer-detail', 'footer-time'];
+  for (var i = 0; i < ids.length; i++) document.getElementById(ids[i]).hidden = false;
+  var p = playerById(event.playerId);
+  document.getElementById('footer-num').textContent = '#' + padNum(event.managementNumber);
+  var badge = document.getElementById('footer-badge');
+  badge.className = 'footer-badge ' + event.kind;
+  badge.textContent = KIND_BADGE[event.kind];
+  document.getElementById('footer-phase').textContent = PHASE_LABELS[getEventPhase(event)];
+  document.getElementById('footer-player').textContent = p ? p.name : '?';
+  document.getElementById('footer-detail').textContent = getPrimaryDetail(event);
+  document.getElementById('footer-time').textContent = event.time;
+  var memoEl = document.getElementById('footer-memo');
+  if (event.memo && event.memo.replace(/\s+/g, '')) {
+    memoEl.textContent = event.memo;
+    memoEl.hidden = false;
+  } else {
+    memoEl.hidden = true;
+  }
+  updateNavButtonsState();
+}
+
+function findRecordById(id) {
+  for (var i = 0; i < state.events.length; i++) {
+    if (state.events[i].id === id) return state.events[i];
+  }
+  return null;
+}
+
+function setFooterToRecord(record) {
+  if (!record) return;
+  currentFooterRecordId = record.id;
+  updateFooter(record);
+  // Update highlight in record list
+  var items = document.querySelectorAll('.rec-item');
+  for (var i = 0; i < items.length; i++) items[i].classList.remove('footer-selected');
+  var el = document.querySelector('.rec-item[data-id="' + record.id + '"]');
+  if (el) el.classList.add('footer-selected');
+
+  if (!player) return;
+
+  // Check if video needs switching
+  var currentVideoId = null;
+  try {
+    var vd = player.getVideoData();
+    if (vd) currentVideoId = vd.video_id;
+  } catch (e) {}
+
+  if (record.videoId && currentVideoId && record.videoId !== currentVideoId) {
+    // Need to switch video
+    if (record.playlistIndex !== undefined && record.playlistIndex !== null) {
+      try {
+        var playlist = player.getPlaylist();
+        if (playlist && record.playlistIndex < playlist.length && playlist[record.playlistIndex] === record.videoId) {
+          player.playVideoAt(record.playlistIndex);
+          // Seek after video switches
+          setTimeout(function() {
+            try {
+              player.seekTo(record.timeSec, true);
+              player.pauseVideo();
+            } catch (e) {}
+          }, 1500);
+          return;
+        }
+      } catch (e) {}
+    }
+    toast('別の動画の記録です。動画を切り替えてください', 'error');
+    return;
+  }
+
+  // Same video, just seek
+  if (player.seekTo) {
+    try { player.seekTo(record.timeSec, true); } catch (e) {}
+  }
+}
+
+function navigateFooter(direction) {
+  if (state.events.length === 0) return;
+  var sorted = state.events.slice(0).sort(function(a, b) {
+    return a.managementNumber - b.managementNumber;
+  });
+  var currentIdx = -1;
+  for (var i = 0; i < sorted.length; i++) {
+    if (sorted[i].id === currentFooterRecordId) { currentIdx = i; break; }
+  }
+  var newIdx;
+  if (currentIdx === -1) {
+    newIdx = direction > 0 ? 0 : sorted.length - 1;
+  } else {
+    newIdx = currentIdx + direction;
+  }
+  if (newIdx < 0 || newIdx >= sorted.length) return;
+  setFooterToRecord(sorted[newIdx]);
+}
+
+function updateNavButtonsState() {
+  var prevBtn = document.getElementById('footer-prev');
+  var nextBtn = document.getElementById('footer-next');
+  if (state.events.length === 0) {
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
+  }
+  var sorted = state.events.slice(0).sort(function(a, b) {
+    return a.managementNumber - b.managementNumber;
+  });
+  var currentIdx = -1;
+  for (var i = 0; i < sorted.length; i++) {
+    if (sorted[i].id === currentFooterRecordId) { currentIdx = i; break; }
+  }
+  prevBtn.disabled = currentIdx <= 0;
+  nextBtn.disabled = currentIdx === -1 || currentIdx >= sorted.length - 1;
+}
+
+function getPrimaryDetail(event) {
+  var config = EVENT_KINDS[event.kind];
+  if (!config) return '';
+  var firstSection = config.sections[0];
+  var val = event[firstSection.key];
+  if (!val) return '';
+  var def = FIELD_DEFS[firstSection.key];
+  return def.options[val] || '';
+}
+
+function updateNextNumDisplay() {
+  document.getElementById('next-num').textContent = '#' + padNum(state.nextNumber);
+  var nd = document.getElementById('next-num-display');
+  if (nd) nd.textContent = padNum(state.nextNumber);
+}
+
+function renderRecordList() {
+  try {
+    var list = document.getElementById('record-list');
+    var events = state.events.slice(0).sort(function(a, b) { return b.managementNumber - a.managementNumber; });
+    document.getElementById('record-count').textContent = events.length > 0 ? events.length + '件' : '';
+    document.getElementById('btn-clear-all').hidden = events.length === 0;
+    document.getElementById('btn-pdf').hidden = events.length === 0;
+    document.getElementById('record-mode-cta').hidden = events.length === 0;
+
+    if (events.length === 0) {
+      list.innerHTML = '<div class="empty-state">まだ記録がありません<br>動画を再生し、上のボタンから記録してください</div>';
+      return;
+    }
+
+    // Get current video ID for indicator
+    var currentVideoId = null;
+    try {
+      if (player && player.getVideoData) {
+        var vd = player.getVideoData();
+        if (vd) currentVideoId = vd.video_id;
+      }
+    } catch (err) {}
+
+    var htmlParts = [];
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      var p = playerById(e.playerId);
+      var name = p ? escapeHtml(p.name) : '?';
+      var config = EVENT_KINDS[e.kind];
+      var borderColor = 'var(--c-' + e.kind + ')';
+      var phase = getEventPhase(e);
+
+      var tags = [];
+      for (var s = 0; s < config.sections.length; s++) {
+        var section = config.sections[s];
+        var def = FIELD_DEFS[section.key];
+        var val = e[section.key];
+        if (!val) continue;
+        if (Object.prototype.toString.call(val) === '[object Array]') {
+          for (var v = 0; v < val.length; v++) {
+            tags.push('<span class="rec-tag ' + (def.tone === 'star' ? 'star' : '') + '">★' + escapeHtml(def.options[val[v]]) + '</span>');
+          }
+        } else {
+          var cls = s === 0 ? 'primary' : '';
+          if (def.tone === 'neg') cls = 'neg';
+          if (def.tone === 'pos') cls = 'pos';
+          if (def.toneMap && def.toneMap[val]) cls = def.toneMap[val];
+          tags.push('<span class="rec-tag ' + cls + '">' + escapeHtml(def.options[val]) + '</span>');
+        }
+      }
+      if (e.coveredForId) {
+        var cp = playerById(e.coveredForId);
+        if (cp) tags.push('<span class="rec-tag">かばった: ' + escapeHtml(cp.name) + '</span>');
+      }
+      if (e.originatorId) {
+        var op = playerById(e.originatorId);
+        if (op) tags.push('<span class="rec-tag">起点: ' + escapeHtml(op.name) + '</span>');
+      }
+      if (e.memo && e.memo.replace(/\s+/g, '')) {
+        tags.push('<span class="rec-tag" style="background:#fef3c7;color:#78350f;border-color:#fbbf24;">メモ: ' + escapeHtml(e.memo) + '</span>');
+      }
+
+      // Video info display
+      var videoHtml = '';
+      if (e.videoTitle) {
+        var isDifferent = currentVideoId && e.videoId && currentVideoId !== e.videoId;
+        var icon = isDifferent ? '⚠️' : '▶';
+        videoHtml = '<div class="rec-video"><span class="rv-icon">' + icon + '</span><span>' + escapeHtml(e.videoTitle) + '</span></div>';
+      }
+
+      var itemClass = 'rec-item' + (e.id === currentFooterRecordId ? ' footer-selected' : '');
+      htmlParts.push(
+        '<div class="' + itemClass + '" data-id="' + e.id + '" style="border-left-color: ' + borderColor + '">' +
+          '<div class="rec-header">' +
+            '<span class="rec-num">#' + padNum(e.managementNumber) + '</span>' +
+            '<span class="rec-kind-badge ' + e.kind + '">' + KIND_BADGE[e.kind] + '</span>' +
+            '<span class="rec-phase-badge ' + phase + '">' + PHASE_LABELS[phase] + '</span>' +
+            '<span class="rec-time" data-sec="' + e.timeSec + '" data-id="' + e.id + '">' + escapeHtml(e.time) + '</span>' +
+            '<span class="rec-player">' + name + '</span>' +
+            '<button class="rec-edit" data-id="' + e.id + '" title="編集">✎</button>' +
+            '<button class="rec-delete" data-id="' + e.id + '">×</button>' +
+          '</div>' +
+          '<div class="rec-details">' + tags.join('') + '</div>' +
+          videoHtml +
+        '</div>'
+      );
+    }
+    list.innerHTML = htmlParts.join('');
+  } catch (e) { showError('renderRecordList', e); }
+}
+
+function seekTo(sec) {
+  if (player && player.seekTo) {
+    try { player.seekTo(sec, true); player.playVideo(); } catch (e) {}
+  }
+}
+
+function deleteEvent(id) {
+  if (!confirm('この記録を削除しますか?')) return;
+  var newEvents = [];
+  for (var i = 0; i < state.events.length; i++) {
+    if (state.events[i].id !== id) newEvents.push(state.events[i]);
+  }
+  state.events = newEvents;
+  if (currentFooterRecordId === id) {
+    currentFooterRecordId = null;
+    // Reset footer to idle or latest
+    if (state.events.length > 0) {
+      var latest = state.events.slice(0).sort(function(a, b) { return b.managementNumber - a.managementNumber; })[0];
+      currentFooterRecordId = latest.id;
+      updateFooter(latest);
+    } else {
+      document.getElementById('footer-idle').hidden = false;
+      var ids = ['footer-num', 'footer-badge', 'footer-phase', 'footer-player', 'footer-detail', 'footer-memo', 'footer-time'];
+      for (var j = 0; j < ids.length; j++) document.getElementById(ids[j]).hidden = true;
+      updateNavButtonsState();
+    }
+  }
+  saveState();
+  renderRecordList();
+}
+
+function clearAll() {
+  if (!confirm('全ての記録を消去します。よろしいですか?')) return;
+  state.events = [];
+  currentFooterRecordId = null;
+  saveState();
+  renderRecordList();
+  document.getElementById('footer-idle').hidden = false;
+  var ids = ['footer-num', 'footer-badge', 'footer-phase', 'footer-player', 'footer-detail', 'footer-memo', 'footer-time'];
+  for (var i = 0; i < ids.length; i++) document.getElementById(ids[i]).hidden = true;
+  updateNavButtonsState();
+}
+
+function exportCSV() {
+  try {
+    if (state.events.length === 0) { alert('記録がありません'); return; }
+    var rows = [['管理番号', '時刻', '場面', '種類', '選手', 'プライマリ', 'セカンダリ', 'ターシャリ', 'かばった/起点', '影響タグ', 'メモ', 'MP4ファイル名']];
+    var sorted = state.events.slice(0).sort(function(a, b) { return a.managementNumber - b.managementNumber; });
+    var dateStr = todayForFilename();
+    for (var i = 0; i < sorted.length; i++) {
+      var e = sorted[i];
+      var p = playerById(e.playerId);
+      var config = EVENT_KINDS[e.kind];
+      var values = [];
+      for (var s = 0; s < config.sections.length; s++) {
+        var def = FIELD_DEFS[config.sections[s].key];
+        var val = e[config.sections[s].key];
+        if (!val) { values.push(''); continue; }
+        if (Object.prototype.toString.call(val) === '[object Array]') {
+          var arr = [];
+          for (var v = 0; v < val.length; v++) arr.push(def.options[val[v]]);
+          values.push(arr.join('/'));
+        } else {
+          values.push(def.options[val] || '');
+        }
+      }
+      var rel = '';
+      if (e.coveredForId) {
+        var cp = playerById(e.coveredForId);
+        if (cp) rel = 'かばった:' + cp.name;
+      }
+      if (e.originatorId) {
+        var op = playerById(e.originatorId);
+        if (op) rel = '起点:' + op.name;
+      }
+      var impacts = '';
+      if (Object.prototype.toString.call(e.fdImpact) === '[object Array]') {
+        var iarr = [];
+        for (var ii = 0; ii < e.fdImpact.length; ii++) iarr.push(FIELD_DEFS.fdImpact.options[e.fdImpact[ii]]);
+        impacts = iarr.join('/');
+      }
+      var filename = generateFilename(e, dateStr);
+      rows.push([
+        '#' + padNum(e.managementNumber), e.time, PHASE_LABELS[getEventPhase(e)], KIND_BADGE[e.kind],
+        p ? p.name : '', values[0] || '', values[1] || '', values[2] || '',
+        rel, impacts, e.memo || '', filename
+      ]);
+    }
+    var csvLines = [];
+    for (var r = 0; r < rows.length; r++) {
+      var cells = [];
+      for (var c = 0; c < rows[r].length; c++) {
+        cells.push('"' + String(rows[r][c]).replace(/"/g, '""') + '"');
+      }
+      csvLines.push(cells.join(','));
+    }
+    var csv = '\uFEFF' + csvLines.join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'play_records_' + dateStr + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) { showError('exportCSV', e); }
+}
+
+function exportFilenames() {
+  try {
+    if (state.events.length === 0) { alert('記録がありません'); return; }
+    var sorted = state.events.slice(0).sort(function(a, b) { return a.managementNumber - b.managementNumber; });
+    var dateStr = todayForFilename();
+    var lines = [];
+    for (var i = 0; i < sorted.length; i++) lines.push(generateFilename(sorted[i], dateStr));
+    var content = lines.join('\n');
+    var blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'mp4_filenames_' + dateStr + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('ファイル名リストを保存しました');
+  } catch (e) { showError('exportFilenames', e); }
+}
+
+// ============ PDF EXPORT (via browser print → save as PDF) ============
+function renderPrintView() {
+  var container = document.getElementById('print-view');
+  var events = state.events.slice(0).sort(function(a, b) { return a.managementNumber - b.managementNumber; });
+  var d = new Date();
+  var dateStr = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日';
+
+  var html = '<div class="print-header">';
+  html += '<h1>塩冶オールスターズ プレー分析レポート</h1>';
+  html += '<div class="print-meta">';
+  html += '<div>出力日: ' + dateStr + '</div>';
+  html += '<div>記録数: ' + events.length + '件</div>';
+  if (state.lastUrl) {
+    html += '<div>動画URL: ' + escapeHtml(state.lastUrl) + '</div>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  if (events.length === 0) {
+    html += '<div style="padding: 20pt; text-align: center; color: #666;">記録がありません</div>';
+  } else {
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      var p = playerById(e.playerId);
+      var name = p ? p.name : '?';
+      var config = EVENT_KINDS[e.kind];
+      var phase = getEventPhase(e);
+      var kindLabel = KIND_BADGE[e.kind];
+      var phaseLabel = PHASE_LABELS[phase];
+
+      // Get details
+      var details = [];
+      for (var s = 0; s < config.sections.length; s++) {
+        var section = config.sections[s];
+        var def = FIELD_DEFS[section.key];
+        var val = e[section.key];
+        if (!val) continue;
+        if (Object.prototype.toString.call(val) === '[object Array]') {
+          for (var v = 0; v < val.length; v++) details.push(def.options[val[v]]);
+        } else {
+          details.push(def.options[val] || val);
+        }
+      }
+      if (e.coveredForId) {
+        var cp = playerById(e.coveredForId);
+        if (cp) details.push('かばった: ' + cp.name);
+      }
+      if (e.originatorId) {
+        var op = playerById(e.originatorId);
+        if (op) details.push('起点: ' + op.name);
+      }
+
+      // Video info + deep link
+      var videoInfo = '';
+      var videoLink = '';
+      if (e.videoTitle) videoInfo = e.videoTitle;
+      else if (e.videoId) videoInfo = '(video: ' + e.videoId + ')';
+      if (e.videoId) {
+        videoLink = 'https://youtube.com/watch?v=' + e.videoId + '&t=' + e.timeSec + 's';
+      }
+
+      html += '<div class="print-record">';
+      html += '<div class="pr-header">';
+      html += '<span class="pr-num">#' + padNum(e.managementNumber) + '</span>';
+      html += '<span class="pr-kind ' + e.kind + '">' + kindLabel + '</span>';
+      html += '<span class="pr-phase">' + phaseLabel + '</span>';
+      html += '<span class="pr-time">' + escapeHtml(e.time) + '</span>';
+      html += '<span class="pr-player">' + escapeHtml(name) + '</span>';
+      html += '</div>';
+      if (details.length > 0) {
+        html += '<div class="pr-details">' + escapeHtml(details.join(' / ')) + '</div>';
+      }
+      if (e.memo && e.memo.replace(/\s+/g, '')) {
+        html += '<div class="pr-memo">メモ: ' + escapeHtml(e.memo) + '</div>';
+      }
+      if (videoInfo) {
+        html += '<div class="pr-video">動画: ' + escapeHtml(videoInfo) + '</div>';
+      }
+      if (videoLink) {
+        html += '<div class="pr-url">' + escapeHtml(videoLink) + '</div>';
+      }
+      html += '</div>';
+    }
+  }
+  container.innerHTML = html;
+}
+
+function exportPDF() {
+  try {
+    if (state.events.length === 0) { alert('記録がありません'); return; }
+    renderPrintView();
+    toast('印刷ダイアログで「PDFとして保存」を選んでください');
+    setTimeout(function() { window.print(); }, 400);
+  } catch (e) { showError('exportPDF', e); }
+}
+
+function openSettings() {
+  try {
+    var list = document.getElementById('player-list-editor');
+    var htmlParts = [];
+    for (var i = 0; i < state.players.length; i++) {
+      var p = state.players[i];
+      htmlParts.push(
+        '<div class="pl-row">' +
+          '<div class="num">' + (i+1) + '</div>' +
+          '<input type="text" value="' + escapeHtml(p.name) + '" data-pid="' + p.id + '" class="pl-input">' +
+        '</div>'
+      );
+    }
+    list.innerHTML = htmlParts.join('');
+    // Attach change listeners
+    var inputs = list.querySelectorAll('.pl-input');
+    for (var j = 0; j < inputs.length; j++) {
+      inputs[j].onchange = (function(input) {
+        return function() {
+          var pid = input.getAttribute('data-pid');
+          for (var k = 0; k < state.players.length; k++) {
+            if (state.players[k].id === pid) {
+              var newName = input.value.replace(/^\s+|\s+$/g, '');
+              if (newName) state.players[k].name = newName;
+              break;
+            }
+          }
+          saveState();
+        };
+      })(inputs[j]);
+    }
+    updateNextNumDisplay();
+    showModal('settings-modal');
+  } catch (e) { showError('openSettings', e); }
+}
+function closeSettings() { hideModal('settings-modal'); }
+function resetNumbering() {
+  if (!confirm('管理番号を #001 からリセットしますか?\n(既存の記録の番号は変わりません)')) return;
+  state.nextNumber = 1;
+  saveState();
+  updateNextNumDisplay();
+  toast('管理番号をリセットしました');
+}
+
+// ============ EVENT LISTENERS ============
+document.getElementById('btn-load').onclick = loadVideo;
+document.getElementById('btn-settings').onclick = openSettings;
+document.getElementById('btn-back').onclick = function() { jumpSeconds(-5); };
+document.getElementById('btn-fwd').onclick = function() { jumpSeconds(10); };
+document.getElementById('btn-prev-video').onclick = playPrevVideo;
+document.getElementById('btn-next-video').onclick = playNextVideo;
+
+var actBtns = document.querySelectorAll('.act-btn');
+for (var i = 0; i < actBtns.length; i++) {
+  (function(btn) {
+    btn.onclick = function() {
+      var kind = btn.getAttribute('data-kind');
+      if (kind) startRecord(kind);
+    };
+  })(actBtns[i]);
+}
+
+document.getElementById('btn-clear-all').onclick = clearAll;
+document.getElementById('btn-pdf').onclick = exportPDF;
+document.getElementById('btn-close-record').onclick = closeModal;
+document.getElementById('btn-cancel-record').onclick = closeModal;
+document.getElementById('btn-save').onclick = saveRecord;
+document.getElementById('btn-close-settings').onclick = closeSettings;
+document.getElementById('btn-close-settings-2').onclick = closeSettings;
+document.getElementById('btn-reset-num').onclick = resetNumbering;
+
+document.querySelector('#record-modal .modal-backdrop').onclick = closeModal;
+document.querySelector('#settings-modal .modal-backdrop').onclick = closeSettings;
+
+// Phase selector
+document.getElementById('phase-selector').addEventListener('click', function(e) {
+  var btn = e.target;
+  while (btn && !btn.classList.contains('phase-btn')) btn = btn.parentElement;
+  if (!btn) return;
+  var phaseBtns = document.querySelectorAll('.phase-btn');
+  for (var i = 0; i < phaseBtns.length; i++) phaseBtns[i].classList.remove('selected');
+  btn.classList.add('selected');
+  draftEvent.phase = btn.getAttribute('data-phase');
+  validateSave();
+});
+
+// Form sections chip clicks + conditional field
+document.getElementById('form-sections').addEventListener('click', function(e) {
+  var btn = e.target;
+  while (btn && btn.tagName !== 'BUTTON') btn = btn.parentElement;
+  if (!btn) return;
+  var container = btn.parentElement;
+  while (container && !container.classList.contains('chips')) container = container.parentElement;
+  if (!container) return;
+  var key = container.getAttribute('data-key');
+  var multi = container.getAttribute('data-multi') === '1';
+  if (multi) {
+    btn.classList.toggle('selected');
+    if (!draftEvent[key]) draftEvent[key] = [];
+    var val = btn.getAttribute('data-val');
+    var arr = draftEvent[key];
+    var idx = -1;
+    for (var i = 0; i < arr.length; i++) if (arr[i] === val) { idx = i; break; }
+    if (idx >= 0) arr.splice(idx, 1); else arr.push(val);
+  } else {
+    var alreadySelected = btn.classList.contains('selected');
+    var btns = container.querySelectorAll('button');
+    for (var j = 0; j < btns.length; j++) btns[j].classList.remove('selected');
+    if (!alreadySelected) {
+      btn.classList.add('selected');
+      draftEvent[key] = btn.getAttribute('data-val');
+    } else {
+      delete draftEvent[key];
+    }
+    if (key === 'pfTactical') {
+      var w = document.getElementById('covered-wrap');
+      if (w) w.hidden = draftEvent[key] !== 'covered';
+      if (draftEvent[key] !== 'covered') {
+        var sel = document.getElementById('input-covered-for');
+        if (sel) sel.value = '';
+      }
+    }
+  }
+  validateSave();
+});
+
+// Record list interactions (delegation)
+// - Tap ✎ edit button → open edit modal
+// - Tap × delete button → delete record
+// - Tap anywhere else on rec-item → switch footer to that record
+document.getElementById('record-list').addEventListener('click', function(e) {
+  var t = e.target;
+  // First check for specific action buttons (they take priority)
+  var current = t;
+  while (current && current !== e.currentTarget) {
+    if (current.classList) {
+      if (current.classList.contains('rec-edit')) {
+        var eid = current.getAttribute('data-id');
+        if (eid) openForEdit(eid);
+        return;
+      }
+      if (current.classList.contains('rec-delete')) {
+        var id = current.getAttribute('data-id');
+        if (id) deleteEvent(id);
+        return;
+      }
+    }
+    current = current.parentElement;
+  }
+  // Otherwise, find the closest .rec-item and switch footer
+  current = t;
+  while (current && current !== e.currentTarget) {
+    if (current.classList && current.classList.contains('rec-item')) {
+      var recId = current.getAttribute('data-id');
+      var rec = recId ? findRecordById(recId) : null;
+      if (rec) setFooterToRecord(rec);
+      return;
+    }
+    current = current.parentElement;
+  }
+});
+
+// Footer navigation buttons
+document.getElementById('footer-prev').onclick = function() { navigateFooter(-1); };
+document.getElementById('footer-next').onclick = function() { navigateFooter(1); };
+
+// Recording mode toggle
+document.getElementById('btn-record-mode').onclick = function() {
+  document.body.classList.add('recording-mode');
+  document.getElementById('btn-exit-recording').hidden = false;
+  toast('横向きに持って画面録画を開始してください');
+};
+document.getElementById('btn-exit-recording').onclick = function() {
+  document.body.classList.remove('recording-mode');
+  document.getElementById('btn-exit-recording').hidden = true;
+};
+
+// URL history
+document.getElementById('btn-url-history').onclick = openUrlHistory;
+document.getElementById('btn-close-history').onclick = closeUrlHistory;
+document.getElementById('btn-close-history-2').onclick = closeUrlHistory;
+document.querySelector('#url-history-modal .modal-backdrop').onclick = closeUrlHistory;
+
+document.getElementById('url-history-list').addEventListener('click', function(e) {
+  var t = e.target;
+  while (t && t !== e.currentTarget) {
+    if (t.classList && t.classList.contains('url-delete')) {
+      var url = t.getAttribute('data-url');
+      if (url) deleteUrlFromHistory(url);
+      return;
+    }
+    if (t.classList && t.classList.contains('url-history-item')) {
+      var url2 = t.getAttribute('data-url');
+      if (url2) selectUrlFromHistory(url2);
+      return;
+    }
+    t = t.parentElement;
+  }
+});
+
+document.getElementById('input-min').addEventListener('input', function(e) {
+  e.target.value = e.target.value.replace(/\D/g, '');
+  validateSave();
+});
+document.getElementById('input-sec').addEventListener('input', function(e) {
+  e.target.value = e.target.value.replace(/\D/g, '');
+  validateSave();
+});
+
+// ============ INIT ============
+if (state.lastUrl) {
+  document.getElementById('url-input').value = state.lastUrl;
+  // Auto-load video (uses pendingLoad if API not ready yet)
+  setTimeout(loadVideo, 100);
+}
+renderRecordList();
+updateNextNumDisplay();
+if (state.events.length > 0) {
+  var latest = state.events.slice(0).sort(function(a, b) { return b.managementNumber - a.managementNumber; })[0];
+  currentFooterRecordId = latest.id;
+  updateFooter(latest);
+} else {
+  updateNavButtonsState();
+}
+
+} catch (mainErr) {
+  showError('init', mainErr);
+}
+})();
+</script>
+</body>
+</html>
