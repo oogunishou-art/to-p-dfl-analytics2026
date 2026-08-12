@@ -1,0 +1,187 @@
+================================================================
+  PROPRIETARY LICENSE / 使用許諾契約
+================================================================
+
+Application:  プレー分析 mini
+              バスケットボール プレー分析 PWA
+              (Basketball Play Analysis PWA)
+Repository:   to-p-dfl-analytics2026
+URL:          https://oogunishou-art.github.io/to-p-dfl-analytics2026/
+Author:       大國将 (Shou Ooguni)
+Copyright:    © 2026 大國将 (Shou Ooguni). All Rights Reserved.
+
+================================================================
+
+
+────────────────────────────────────────────────────────────────
+  日本語版
+────────────────────────────────────────────────────────────────
+
+【1. 著作権の帰属】
+
+  本アプリケーション（ソースコード、UI デザイン、ロジック、
+  データ構造、ドキュメントを含む一切）の著作権は、大國将
+  （Shou Ooguni、以下「制作者」）個人に帰属します。
+
+  本アプリケーションは制作者個人の私的プロジェクトとして、
+  制作者個人の時間、費用、技術によって開発されたものであり、
+  いかなる団体・組織にも権利は譲渡されていません。
+
+
+【2. 禁止事項】
+
+  制作者の書面による事前の許諾なく、以下の行為を一切禁止
+  します：
+
+  (1) 本ソースコードの全部または一部の複製・複写・保存
+      （個人利用目的のブラウザキャッシュを除く）
+
+  (2) 本ソースコードの改変・翻案・二次的著作物の作成
+
+  (3) 本ソースコードの再配布・公衆送信・公開
+      （有償・無償を問わず）
+
+  (4) 本ソースコードのリバースエンジニアリング、逆コンパイル、
+      逆アセンブル
+
+  (5) 本アプリケーションの UI デザイン、画面構成、操作フロー、
+      機能構成、データ構造の模倣
+
+  (6) 本アプリケーションの別チーム・別団体・別用途への移植、
+      派生アプリケーションの制作
+
+  (7) 本アプリケーションの商用利用
+
+
+【3. 許可される利用】
+
+  以下の利用は明示的に許可されます：
+
+  - ブラウザからの通常アクセスによる本アプリケーションの利用
+  - 制作者本人による利用および指導活動での使用
+  - 制作者の許諾を得た関係者による利用
+  - 学術目的での参照（引用元の明示が必要）
+
+
+【4. 著作権表示の維持】
+
+  本ソースコード内に埋め込まれた著作権表示、ライセンス表示、
+  制作者名、リポジトリ情報等を削除・改変することを禁じます。
+
+
+【5. 免責事項】
+
+  本アプリケーションは現状有姿（AS IS）で提供されます。
+  制作者は、動作の保証、不具合対応、継続提供のいずれの義務も
+  負いません。本アプリケーションの利用に起因して生じた
+  いかなる損害についても、制作者は一切の責任を負いません。
+
+
+【6. 違反時の措置】
+
+  本規約に違反する行為が確認された場合、制作者は以下の措置を
+  取ることがあります：
+
+  - 違反行為の即時停止要求
+  - 著作権法および関連法令に基づく損害賠償請求
+  - 差止請求
+  - その他必要な法的措置
+
+
+【7. 準拠法および管轄】
+
+  本規約の解釈および本アプリケーションに関する紛争は、
+  日本法に準拠し、日本の裁判所を専属的合意管轄とします。
+
+
+────────────────────────────────────────────────────────────────
+  ENGLISH VERSION
+────────────────────────────────────────────────────────────────
+
+[1. Copyright Ownership]
+
+  All rights, including copyright, to this application
+  (including source code, UI design, logic, data structure,
+  and documentation) belong exclusively to Shou Ooguni
+  ("the Author").
+
+  This application was developed as the Author's personal
+  private project, using the Author's own time, expense, and
+  technical skills. No rights have been transferred to any
+  organization or group.
+
+
+[2. Prohibited Actions]
+
+  Without prior written permission from the Author, the
+  following actions are strictly prohibited:
+
+  (1) Copying, reproducing, or storing all or part of this
+      source code (excluding browser caches for personal use)
+
+  (2) Modifying, adapting, or creating derivative works
+
+  (3) Redistributing, transmitting, or publishing this source
+      code (whether for profit or not)
+
+  (4) Reverse-engineering, decompiling, or disassembling
+
+  (5) Imitating the UI design, screen composition, operation
+      flow, feature composition, or data structure of this
+      application
+
+  (6) Porting this application to another team, organization,
+      or purpose, or creating derivative applications
+
+  (7) Commercial use of this application
+
+
+[3. Permitted Uses]
+
+  The following uses are explicitly permitted:
+
+  - Using this application via normal browser access
+  - Use by the Author and use in the Author's coaching
+    activities
+  - Use by parties who have obtained permission from the Author
+  - Reference for academic purposes (with proper citation)
+
+
+[4. Preservation of Copyright Notices]
+
+  Removal or modification of copyright notices, license notices,
+  author names, or repository information embedded in this
+  source code is prohibited.
+
+
+[5. Disclaimer]
+
+  This application is provided AS IS. The Author makes no
+  warranty of any kind, and assumes no obligation to fix bugs
+  or provide continued availability. The Author shall not be
+  liable for any damages arising from the use of this
+  application.
+
+
+[6. Enforcement]
+
+  In case of violation of these terms, the Author may take the
+  following measures:
+
+  - Demand for immediate cessation of the violation
+  - Claim for damages under copyright law and related laws
+  - Injunction
+  - Any other necessary legal measures
+
+
+[7. Governing Law and Jurisdiction]
+
+  These terms shall be governed by the laws of Japan, and any
+  disputes arising in connection with this application shall
+  be subject to the exclusive jurisdiction of the Japanese
+  courts.
+
+
+================================================================
+  © 2026 大國将 (Shou Ooguni). All Rights Reserved.
+================================================================
